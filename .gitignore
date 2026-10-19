@@ -1,0 +1,25 @@
+# Environment configuration
+.env
+
+# Large binary demo assets (videos & images) - serve from CDN or upload separately
+assets/videos/
+assets/images/
+
+# Customer uploads
+uploads/*
+!uploads/.htaccess
+
+# SQLite database (runtime data, not source code)
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+
+# Backups
+*.bak
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

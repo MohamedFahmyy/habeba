@@ -1,0 +1,52 @@
+# Romantic Memories Platform - Apache Web Server Configuration
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Block direct access to database directory
+    RewriteRule ^data/ - [F,L]
+
+    # Friendly URLs
+    RewriteRule ^gift/([^/]+)/?$ gift.php?slug=$1 [L,QSA]
+    RewriteRule ^create/?$ wizard.php [L,QSA]
+    RewriteRule ^editor/?$ editor.php [L,QSA]
+    RewriteRule ^admin/?$ admin.php [L,QSA]
+
+    # Standard file check
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+</IfModule>
+
+# PHP Upload & Memory Configuration
+<IfModule mod_php.c>
+    php_value upload_max_filesize 25M
+    php_value post_max_size 30M
+    php_value memory_limit 128M
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 25M
+    php_value post_max_size 30M
+    php_value memory_limit 128M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 25M
+    php_value post_max_size 30M
+    php_value memory_limit 128M
+</IfModule>
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "^\.(env|git|sqlite|db|log|sh)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
