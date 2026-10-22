@@ -442,6 +442,86 @@ if ($isAdmin) {
                 </table>
             </div>
             <?php endif; ?>
+
+            <!-- Previous Payments Archive -->
+            <div style="margin-top: 45px; padding-top: 25px; border-top: 1px solid var(--theme-glass-border);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                    <h3 style="font-size: 1.25rem; color: var(--theme-deep); margin: 0;">
+                        <i class="fas fa-history" style="color: var(--theme-primary);"></i> سجل كافة المدفوعات السابقة والمعتمدة
+                    </h3>
+                    <span style="font-size: 0.85rem; color: var(--theme-text-muted);">
+                        إجمالي المعاملات: <?php echo count($allPayments); ?>
+                    </span>
+                </div>
+
+                <?php if (empty($allPayments)): ?>
+                <div class="glass-box" style="padding: 30px; text-align: center; color: var(--theme-text-muted); font-size: 0.95rem;">
+                    لا توجد أي معاملات سابقة مسجلة.
+                </div>
+                <?php else: ?>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>العميل</th>
+                                <th>الهدية</th>
+                                <th>وسيلة الدفع</th>
+                                <th>المبلغ</th>
+                                <th>رقم العملية (Ref)</th>
+                                <th>الإيصال</th>
+                                <th>الحالة</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($allPayments as $ap): ?>
+                            <tr>
+                                <td><?php echo $ap['id']; ?></td>
+                                <td>
+                                    <strong><?php echo htmlspecialchars($ap['user_name'] ?? ''); ?></strong>
+                                    <div style="font-size: 0.78rem; color: var(--theme-text-muted);"><?php echo htmlspecialchars($ap['user_email'] ?? ''); ?></div>
+                                </td>
+                                <td>
+                                    <a href="gift.php?slug=<?php echo urlencode($ap['gift_slug'] ?? ''); ?>" target="_blank" style="color: var(--theme-deep); font-weight: 600;">
+                                        <?php echo htmlspecialchars($ap['gift_title'] ?? ('#' . $ap['gift_id'])); ?>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 600; text-transform: uppercase;"><?php echo htmlspecialchars($ap['provider']); ?></span>
+                                </td>
+                                <td>
+                                    <strong><?php echo $ap['amount']; ?> <?php echo htmlspecialchars($ap['currency']); ?></strong>
+                                </td>
+                                <td>
+                                    <code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px;"><?php echo htmlspecialchars($ap['transaction_reference'] ?? '-'); ?></code>
+                                </td>
+                                <td>
+                                    <?php if (!empty($ap['receipt_path'])): ?>
+                                    <a href="<?php echo htmlspecialchars($ap['receipt_path']); ?>" target="_blank" class="btn-romantic-outline btn-romantic-sm">
+                                        <i class="fas fa-image"></i> عرض الإيصال
+                                    </a>
+                                    <?php else: ?>
+                                    <span style="color: #999; font-size: 0.8rem;">بدون إيصال</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="badge-status <?php echo ($ap['status'] === 'approved') ? 'badge-published' : (($ap['status'] === 'rejected') ? 'badge-draft' : ''); ?>" style="<?php echo ($ap['status'] === 'approved') ? 'background: #e8f5e9; color: #2e7d32;' : (($ap['status'] === 'rejected') ? 'background: #ffebee; color: #c62828;' : 'background: #fff8e1; color: #f57f17;'); ?>">
+                                        <?php 
+                                            echo ($ap['status'] === 'approved') ? 'معتمد (Approved)' : (($ap['status'] === 'rejected') ? 'مرفوض (Rejected)' : 'قيد المراجعة'); 
+                                        ?>
+                                    </span>
+                                </td>
+                                <td style="font-size: 0.8rem; color: var(--theme-text-muted);">
+                                    <?php echo date('Y-m-d H:i', strtotime($ap['created_at'])); ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
 
         <!-- TAB 2: GIFTS LIST -->

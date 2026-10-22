@@ -180,6 +180,9 @@ class Database {
         // Seed default platform settings
         self::seedDefaultSettings();
 
+        // Seed default admin user
+        self::seedDefaultAdmin();
+
         // Check if flagship seed exists
         self::seedDefaultGift();
     }
@@ -232,6 +235,18 @@ class Database {
 
         foreach ($defaults as $k => $v) {
             $stmt->execute([$k, $v]);
+        }
+    }
+
+    private static function seedDefaultAdmin(): void {
+        $db = self::$instance;
+        $adminEmail = 'admin@habeba.com';
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+        $stmt->execute([$adminEmail]);
+        if (!$stmt->fetch()) {
+            $hash = password_hash(ADMIN_PASSWORD, PASSWORD_DEFAULT);
+            $stmt = $db->prepare("INSERT INTO users (email, username, password_hash, role) VALUES (?, ?, ?, 'admin')");
+            $stmt->execute([$adminEmail, 'Habeba Admin', $hash]);
         }
     }
 

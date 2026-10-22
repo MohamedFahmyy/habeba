@@ -119,11 +119,12 @@ class GiftService {
             }
         }
 
-        // Session-authorized creator or valid edit_token for unassigned gifts
-        if (!empty($token) && !empty($gift['edit_token']) && hash_equals($gift['edit_token'], $token)) {
-            return true;
+        // If an explicit token was passed, validate it strictly
+        if (!empty($token)) {
+            return !empty($gift['edit_token']) && hash_equals($gift['edit_token'], $token);
         }
 
+        // Session-authorized creator for unassigned gifts (no token passed)
         if (!empty($gift['id']) && !empty($_SESSION['editable_gifts'][$gift['id']]) && !empty($gift['edit_token']) && hash_equals($gift['edit_token'], $_SESSION['editable_gifts'][$gift['id']])) {
             return true;
         }

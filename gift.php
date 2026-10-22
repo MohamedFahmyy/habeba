@@ -64,6 +64,7 @@ $previewImage = !empty($gift['memories']) ? $gift['memories'][0]['image_url'] : 
 if (!preg_match('/^https?:\/\//', $previewImage)) {
     $previewImage = BASE_URL . '/' . ltrim($previewImage, '/');
 }
+$musicVideoId = !empty($gift['music_video_id']) ? $gift['music_video_id'] : GiftService::extractYouTubeId($gift['music_url'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo I18n::getLang(); ?>" dir="<?php echo I18n::getDir(); ?>">
@@ -109,7 +110,7 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
     </div>
 
     <!-- Floating Elegant Music Bar -->
-    <?php if (!empty($gift['music_video_id'])): ?>
+    <?php if (!empty($musicVideoId)): ?>
     <div class="floating-music-bar" id="music-bar">
         <div class="music-disc" id="music-disc">
             <i class="fas fa-compact-disc"></i>
@@ -125,7 +126,7 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
             <i class="fas fa-volume-up" id="mute-icon"></i>
         </button>
     </div>
-    <div id="yt-player-container" style="display:none; width:0; height:0;"></div>
+    <div id="yt-player-container" style="position:fixed;top:-9999px;left:-9999px;width:240px;height:240px;opacity:0;pointer-events:none;z-index:-999;"></div>
     <?php endif; ?>
 
     <!-- Particles Container -->
@@ -165,7 +166,7 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
                 <a href="#memories-section" class="btn-romantic">
                     <i class="fas fa-heart"></i> Open Your Gift
                 </a>
-                <?php if (!empty($gift['music_video_id'])): ?>
+                <?php if (!empty($musicVideoId)): ?>
                 <button id="hero-play-song" class="btn-romantic-outline">
                     <i class="fas fa-music"></i> Play Our Song
                 </button>
@@ -391,8 +392,8 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
     <!-- Official YouTube Player API & Interactive Script -->
     <script>
         const giftConfig = {
-            videoId: <?php echo json_encode($gift['music_video_id'] ?? null); ?>,
-            hasMusic: <?php echo !empty($gift['music_video_id']) ? 'true' : 'false'; ?>,
+            videoId: <?php echo json_encode($musicVideoId ?? null); ?>,
+            hasMusic: <?php echo !empty($musicVideoId) ? 'true' : 'false'; ?>,
             pageUrl: <?php echo json_encode(BASE_URL . '/gift.php?slug=' . urlencode($gift['slug'])); ?>,
             title: <?php echo json_encode($gift['title']); ?>
         };
@@ -401,13 +402,41 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
         let ytPlayer = null;
         let isMusicPlaying = false;
         let isMuted = false;
+        let userInteracted = false;
+        let manuallyPaused = false;
+
+        function startPlayingMusic() {
+            if (manuallyPaused) return;
+            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(65);
+                ytPlayer.playVideo();
+            }
+            const prompt = document.getElementById('autoplay-prompt');
+            if (prompt) prompt.style.display = 'none';
+        }
+
+        // Global first-interaction unlock (click, touch, scroll, keydown)
+        const unlockAudioOnGesture = () => {
+            userInteracted = true;
+            if (!isMusicPlaying && !manuallyPaused) {
+                startPlayingMusic();
+            }
+            ['click', 'touchstart', 'scroll', 'keydown'].forEach(evt => {
+                window.removeEventListener(evt, unlockAudioOnGesture);
+            });
+        };
+
+        ['click', 'touchstart', 'scroll', 'keydown'].forEach(evt => {
+            window.addEventListener(evt, unlockAudioOnGesture, { passive: true });
+        });
 
         function onYouTubeIframeAPIReady() {
             if (!giftConfig.hasMusic || !giftConfig.videoId) return;
 
             ytPlayer = new YT.Player('yt-player-container', {
-                height: '0',
-                width: '0',
+                height: '240',
+                width: '240',
                 videoId: giftConfig.videoId,
                 playerVars: {
                     'autoplay': 1,
@@ -415,7 +444,8 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
                     'loop': 1,
                     'playlist': giftConfig.videoId,
                     'playsinline': 1,
-                    'rel': 0
+                    'rel': 0,
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -426,21 +456,27 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
         }
 
         function onPlayerReady(event) {
-            event.target.setVolume(50);
-            // Attempt autoplay
-            const playPromise = event.target.playVideo();
+            event.target.unMute();
+            event.target.setVolume(65);
+            
+            if (userInteracted) {
+                startPlayingMusic();
+            } else {
+                // Attempt autoplay
+                event.target.playVideo();
+            }
             
             // Check after a brief delay if playing started
             setTimeout(() => {
                 if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
                     const state = ytPlayer.getPlayerState();
-                    if (state !== YT.PlayerState.PLAYING) {
+                    if (state !== YT.PlayerState.PLAYING && !manuallyPaused) {
                         // Browser autoplay policy prevented playback; show friendly prompt
                         const prompt = document.getElementById('autoplay-prompt');
                         if (prompt) prompt.style.display = 'flex';
                     }
                 }
-            }, 1200);
+            }, 1400);
         }
 
         function onPlayerStateChange(event) {
@@ -512,22 +548,14 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
             const btnDismissAudio = document.getElementById('btn-dismiss-audio');
             const heroPlaySong = document.getElementById('hero-play-song');
 
-            function startPlayingMusic() {
-                if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                    ytPlayer.unMute();
-                    ytPlayer.setVolume(60);
-                    ytPlayer.playVideo();
-                }
-                const prompt = document.getElementById('autoplay-prompt');
-                if (prompt) prompt.style.display = 'none';
-            }
-
             if (btnTogglePlay) {
                 btnTogglePlay.addEventListener('click', () => {
                     if (!ytPlayer || typeof ytPlayer.playVideo !== 'function') return;
                     if (isMusicPlaying) {
+                        manuallyPaused = true;
                         ytPlayer.pauseVideo();
                     } else {
+                        manuallyPaused = false;
                         ytPlayer.playVideo();
                     }
                 });
@@ -549,10 +577,17 @@ if (!preg_match('/^https?:\/\//', $previewImage)) {
                 });
             }
 
-            if (btnStartAudio) btnStartAudio.addEventListener('click', startPlayingMusic);
-            if (heroPlaySong) heroPlaySong.addEventListener('click', startPlayingMusic);
+            if (btnStartAudio) btnStartAudio.addEventListener('click', () => {
+                manuallyPaused = false;
+                startPlayingMusic();
+            });
+            if (heroPlaySong) heroPlaySong.addEventListener('click', () => {
+                manuallyPaused = false;
+                startPlayingMusic();
+            });
             if (btnDismissAudio) {
                 btnDismissAudio.addEventListener('click', () => {
+                    manuallyPaused = true;
                     document.getElementById('autoplay-prompt').style.display = 'none';
                 });
             }

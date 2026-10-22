@@ -100,22 +100,22 @@ $updateData = [
     ]
 ];
 
-$updated = GiftService::updateGift($created['id'], $created['edit_token'], $updateData);
-assertTest($updated === true, 'Gift updated with valid edit_token');
+$updated = GiftService::updateGift($created['id'], null, $created['edit_token'], $updateData);
+assertTest($updated['success'] === true, 'Gift updated with valid edit_token');
 
-$refetched = GiftService::getGiftById($created['id'], $created['edit_token']);
+$refetched = GiftService::getGiftById($created['id'], null, $created['edit_token']);
 assertTest($refetched['title'] === 'Kareem & Nour - Updated Love Story', 'Updated title persisted');
 assertTest($refetched['theme_id'] === 'midnight', 'Theme updated to midnight');
 assertTest(count($refetched['memories']) === 1, 'Memories replaced/updated accurately');
 
 // 6. Security & Unauthorized Edit Block
 echo "\n--- Testing Authorization & Security Checks ---\n";
-$fakeTokenUpdate = GiftService::updateGift($created['id'], 'fake_token_123', ['title' => 'Hacked Title']);
-assertTest($fakeTokenUpdate === false, 'Unauthorized update with fake token was blocked');
+$fakeTokenUpdate = GiftService::updateGift($created['id'], null, 'fake_token_123', ['title' => 'Hacked Title']);
+assertTest($fakeTokenUpdate['success'] === false, 'Unauthorized update with fake token was blocked');
 
 // 7. Cleanup test gift
 echo "\n--- Cleaning up test record ---\n";
-$deleted = GiftService::deleteGift($created['id'], $created['edit_token']);
+$deleted = GiftService::deleteGift($created['id'], null, $created['edit_token']);
 assertTest($deleted === true, 'Test gift deleted cleanly');
 
 echo "\n🎉 ALL VERIFICATION TESTS COMPLETED SUCCESSFULLY!\n";
