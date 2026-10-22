@@ -126,7 +126,7 @@ $musicVideoId = !empty($gift['music_video_id']) ? $gift['music_video_id'] : Gift
             <i class="fas fa-volume-up" id="mute-icon"></i>
         </button>
     </div>
-    <div id="yt-player-container" style="position:fixed;top:-9999px;left:-9999px;width:240px;height:240px;opacity:0;pointer-events:none;z-index:-999;"></div>
+    <div id="yt-player-container" style="position:fixed;bottom:0px;right:0px;width:2px;height:2px;opacity:0.001;pointer-events:none;z-index:-999;overflow:hidden;"></div>
     <?php endif; ?>
 
     <!-- Particles Container -->
@@ -435,8 +435,8 @@ $musicVideoId = !empty($gift['music_video_id']) ? $gift['music_video_id'] : Gift
             if (!giftConfig.hasMusic || !giftConfig.videoId) return;
 
             ytPlayer = new YT.Player('yt-player-container', {
-                height: '240',
-                width: '240',
+                height: '2',
+                width: '2',
                 videoId: giftConfig.videoId,
                 playerVars: {
                     'autoplay': 1,
